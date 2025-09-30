@@ -1007,6 +1007,86 @@ def init(
             # Ensure scripts are executable (POSIX)
             ensure_executable_scripts(project_path, tracker=tracker)
 
+            # Create .vscode/mcp.json for MCP server configuration
+            tracker.add("mcp-config", "Create MCP configuration")
+            tracker.start("mcp-config")
+            try:
+                vscode_dir = project_path / ".vscode"
+                vscode_dir.mkdir(parents=True, exist_ok=True)
+                mcp_file = vscode_dir / "mcp.json"
+                
+                # Create MCP configuration with standard servers
+                mcp_config = {
+                    "servers": {
+                        "context7": {
+                            "type": "http",
+                            "url": "https://mcp.context7.com/mcp"
+                        },
+                        "github": {
+                            "type": "http",
+                            "url": "https://api.githubcopilot.com/mcp"
+                        },
+                        "microsoft.docs.mcp": {
+                            "type": "http",
+                            "url": "https://learn.microsoft.com/api/mcp"
+                        }
+                    }
+                }
+                
+                # Add cloud-specific MCP servers
+                if selected_cloud == "azure":
+                    mcp_config["servers"]["azure"] = {
+                        "command": "npx",
+                        "args": [
+                            "-y",
+                            "@azure/mcp@latest",
+                            "server",
+                            "start"
+                        ]
+                    }
+                elif selected_cloud == "aws":
+                    # AWS MCP Server - Core MCP for intelligent planning and orchestration
+                    mcp_config["servers"]["aws-core"] = {
+                        "command": "uvx",
+                        "args": [
+                            "awslabs.core-mcp-server@latest"
+                        ],
+                        "env": {
+                            "FASTMCP_LOG_LEVEL": "ERROR"
+                        }
+                    }
+                    # AWS API MCP Server - Comprehensive AWS API support
+                    mcp_config["servers"]["aws-api"] = {
+                        "command": "uvx",
+                        "args": [
+                            "awslabs.aws-api-mcp-server@latest"
+                        ],
+                        "env": {
+                            "FASTMCP_LOG_LEVEL": "ERROR"
+                        }
+                    }
+                elif selected_cloud == "gcp":
+                    # Google Cloud MCP Server
+                    mcp_config["servers"]["google-cloud"] = {
+                        "command": "node",
+                        "args": [
+                            "npx",
+                            "-y",
+                            "google-cloud-mcp"
+                        ],
+                        "env": {
+                            "GOOGLE_APPLICATION_CREDENTIALS": "${GOOGLE_APPLICATION_CREDENTIALS}"
+                        }
+                    }
+                
+                with open(mcp_file, 'w') as f:
+                    json.dump(mcp_config, f, indent=2)
+                
+                tracker.complete("mcp-config", ".vscode/mcp.json created")
+            except Exception as e:
+                tracker.error("mcp-config", str(e))
+                console.print(f"[yellow]Warning:[/yellow] Could not create MCP config: {e}")
+
             # Create cloud provider configuration if selected
             if selected_cloud != "none":
                 tracker.start("cloud-config")
