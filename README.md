@@ -1,7 +1,8 @@
 <div align="center">
     <img src="./media/logo_small.webp"/>
     <h1>🌱 Spec Kit</h1>
-    <h3><em>Build high-quality software faster.</em></h3>
+
+<em><h3>Build high-quality software faster.</h3></em>
 </div>
 
 <p align="center">
@@ -79,7 +80,18 @@ Use the **`/constitution`** command to create your project's governing principle
 /constitution Create principles focused on code quality, testing standards, user experience consistency, and performance requirements
 ```
 
-### 3. Create the spec
+### 3. (Optional) Discover existing infrastructure
+
+If working with existing cloud resources, use **`/discover`** to analyze your current environment:
+
+```bash
+/discover azd-env-name:my-environment    # Discover resources with specific tag
+/discover environment:production          # Discover by environment tag
+```
+
+This generates a comprehensive inventory of cloud resources that can inform your specifications and implementation plans.
+
+### 4. Create the spec
 
 Use the **`/specify`** command to describe what you want to build. Focus on the **what** and **why**, not the tech stack.
 
@@ -87,7 +99,7 @@ Use the **`/specify`** command to describe what you want to build. Focus on the 
 /specify Build an application that can help me organize my photos in separate photo albums. Albums are grouped by date and can be re-organized by dragging and dropping on the main page. Albums are never in other nested albums. Within each album, photos are previewed in a tile-like interface.
 ```
 
-### 4. Create a technical implementation plan
+### 5. Create a technical implementation plan
 
 Use the **`/plan`** command to provide your tech stack and architecture choices.
 
@@ -95,7 +107,7 @@ Use the **`/plan`** command to provide your tech stack and architecture choices.
 /plan The application uses Vite with minimal number of libraries. Use vanilla HTML, CSS, and JavaScript as much as possible. Images are not uploaded anywhere and metadata is stored in a local SQLite database.
 ```
 
-### 5. Break down into tasks
+### 6. Break down into tasks
 
 Use **`/tasks`** to create an actionable task list from your implementation plan.
 
@@ -209,12 +221,15 @@ After running `specify init`, your AI coding agent will have access to these sla
 | Command         | Description                                                           |
 |-----------------|-----------------------------------------------------------------------|
 | `/constitution` | Create or update project governing principles and development guidelines |
+| `/discover`     | Discover and analyze existing cloud infrastructure (Azure, AWS*, GCP*) using MCP servers |
 | `/specify`      | Define what you want to build (requirements and user stories)        |
 | `/clarify`      | Clarify underspecified areas (must be run before `/plan` unless explicitly skipped; formerly `/quizme`) |
 | `/plan`         | Create technical implementation plans with your chosen tech stack     |
 | `/tasks`        | Generate actionable task lists for implementation                     |
 | `/analyze`      | Cross-artifact consistency & coverage analysis (run after /tasks, before /implement) |
 | `/implement`    | Execute all tasks to build the feature according to the plan         |
+
+*AWS and Google Cloud support coming soon
 
 ### Environment Variables
 
@@ -342,7 +357,7 @@ Go to the project folder and run your AI agent. In our example, we're using `cla
 
 ![Bootstrapping Claude Code environment](./media/bootstrap-claude-code.gif)
 
-You will know that things are configured correctly if you see the `/constitution`, `/specify`, `/plan`, `/tasks`, and `/implement` commands available.
+You will know that things are configured correctly if you see the `/constitution`, `/discover`, `/specify`, `/plan`, `/tasks`, and `/implement` commands available.
 
 The first step should be establishing your project's governing principles using the `/constitution` command. This helps ensure consistent decision-making throughout all subsequent development phases:
 
@@ -352,7 +367,66 @@ The first step should be establishing your project's governing principles using 
 
 This step creates or updates the `.specify/memory/constitution.md` file with your project's foundational guidelines that the AI agent will reference during specification, planning, and implementation phases.
 
-### **STEP 2:** Create project specifications
+### **STEP 1.5 (Optional):** Discover existing infrastructure
+
+If you're working with existing cloud infrastructure (Azure, AWS, or Google Cloud), you can use the `/discover` command to analyze your current environment before creating specifications. This is especially useful for:
+
+- **Brownfield projects**: Building on top of existing infrastructure
+- **Migration projects**: Understanding current state before planning changes
+- **Integration projects**: Identifying resources to connect with
+
+The discover command uses Model Context Protocol (MCP) servers to query your cloud environment and generate a comprehensive inventory of resources.
+
+**Example usage:**
+
+```text
+/discover azd-env-name:azd-ais-lza-prd
+```
+
+This will:
+1. Connect to your configured cloud provider's MCP server
+2. Query all resources matching the tag filter (e.g., `azd-env-name=azd-ais-lza-prd`)
+3. Generate a detailed discovery document with:
+   - Resource inventory (VMs, storage, databases, networks, etc.)
+   - Configuration details (SKUs, settings, security)
+   - Resource dependencies and relationships
+   - Existing Infrastructure as Code analysis
+   - Integration points for new deployments
+
+**Tag filter formats:**
+
+```text
+/discover environment:production              # Single tag
+/discover env:prod,team:platform             # Multiple tags
+/discover                                     # Discover all (use with caution)
+```
+
+**Cloud provider configuration:**
+
+During `specify init`, you'll be prompted to select a cloud provider:
+- **Azure** - Fully supported via Azure MCP servers
+- **AWS** - Coming soon
+- **Google Cloud** - Coming soon
+
+The discovered infrastructure will be saved in `specs/XXX-discovery/discovery.md` and can be referenced when creating specifications and plans to ensure your new implementations integrate properly with existing resources.
+
+**When to use `/discover`:**
+
+- Before `/specify` if you need to understand existing infrastructure first
+- Before `/plan` to identify deployment targets and shared services
+- Before `/tasks` to reference specific resources in implementation tasks
+
+**Example workflow with discovery:**
+
+```text
+1. /discover azd-env-name:my-prod-env
+2. /specify Add a new microservice that stores data in the existing Azure SQL database
+3. /plan Use the discovered vnet-prod-01 network and kv-prod-01 key vault
+4. /tasks
+5. /implement
+```
+
+### **STEP 3:** Create project specifications
 
 With your project principles established, you can now create the functional specifications. Use the `/specify` command and then provide the concrete requirements for the project you want to develop.
 
@@ -407,7 +481,7 @@ At this stage, your project folder contents should resemble the following:
         └── tasks-template.md
 ```
 
-### **STEP 3:** Functional specification clarification (required before planning)
+### **STEP 4:** Functional specification clarification (required before planning)
 
 With the baseline specification created, you can go ahead and clarify any of the requirements that were not captured properly within the first shot attempt.
 
@@ -435,7 +509,7 @@ Read the review and acceptance checklist, and check off each item in the checkli
 
 It's important to use the interaction with Claude Code as an opportunity to clarify and ask questions around the specification - **do not treat its first attempt as final**.
 
-### **STEP 4:** Generate a plan
+### **STEP 5:** Generate a plan
 
 You can now be specific about the tech stack and other technical requirements. You can use the `/plan` command that is built into the project template with a prompt like this:
 

@@ -81,6 +81,14 @@ AI_CHOICES = {
 # Add script type choices
 SCRIPT_TYPE_CHOICES = {"sh": "POSIX Shell (bash/zsh)", "ps": "PowerShell"}
 
+# Cloud provider choices for discovery
+CLOUD_PROVIDER_CHOICES = {
+    "azure": "Microsoft Azure",
+    "aws": "Amazon Web Services (coming soon)",
+    "gcp": "Google Cloud Platform (coming soon)",
+    "none": "Skip cloud discovery setup"
+}
+
 # Claude CLI local installation path after migrate-installer
 CLAUDE_LOCAL_PATH = Path.home() / ".claude" / "local" / "claude"
 
@@ -940,6 +948,24 @@ def init(
     console.print(f"[cyan]Selected AI assistant:[/cyan] {selected_ai}")
     console.print(f"[cyan]Selected script type:[/cyan] {selected_script}")
     
+    # Cloud provider selection for discovery
+    if sys.stdin.isatty():
+        selected_cloud = select_with_arrows(
+            CLOUD_PROVIDER_CHOICES,
+            "Choose cloud provider for discovery (optional):",
+            "azure"
+        )
+    else:
+        selected_cloud = "none"
+    
+    # Only show selection if not "none"
+    if selected_cloud != "none":
+        console.print(f"[cyan]Selected cloud provider:[/cyan] {selected_cloud}")
+        
+        # Warn about AWS and GCP not being ready
+        if selected_cloud in ["aws", "gcp"]:
+            console.print(f"[yellow]Note:[/yellow] {CLOUD_PROVIDER_CHOICES[selected_cloud]} - discovery will be available in a future release")
+    
     # Download and set up project
     # New tree-based progress (no emojis); include earlier substeps
     tracker = StepTracker("Initialize Specify Project")
@@ -952,6 +978,8 @@ def init(
     tracker.complete("ai-select", f"{selected_ai}")
     tracker.add("script-select", "Select script type")
     tracker.complete("script-select", selected_script)
+    if selected_cloud != "none":
+        tracker.add("cloud-config", "Configure cloud provider")
     for key, label in [
         ("fetch", "Fetch latest release"),
         ("download", "Download template"),
@@ -978,6 +1006,27 @@ def init(
 
             # Ensure scripts are executable (POSIX)
             ensure_executable_scripts(project_path, tracker=tracker)
+
+            # Create cloud provider configuration if selected
+            if selected_cloud != "none":
+                tracker.start("cloud-config")
+                try:
+                    config_dir = project_path / ".specify"
+                    config_dir.mkdir(parents=True, exist_ok=True)
+                    config_file = config_dir / "config"
+                    
+                    # Create or update config file
+                    config_content = f"# Specify Configuration\n"
+                    config_content += f"# Cloud provider for infrastructure discovery\n"
+                    config_content += f"CLOUD_PROVIDER={selected_cloud}\n"
+                    
+                    with open(config_file, 'w') as f:
+                        f.write(config_content)
+                    
+                    tracker.complete("cloud-config", f"{selected_cloud} configured")
+                except Exception as e:
+                    tracker.error("cloud-config", str(e))
+                    console.print(f"[yellow]Warning:[/yellow] Could not create cloud config: {e}")
 
             # Git step
             if not no_git:
@@ -1068,11 +1117,20 @@ def init(
 
     steps_lines.append(f"{step_num}. Start using slash commands with your AI agent:")
 
-    steps_lines.append("   2.1 [cyan]/constitution[/] - Establish project principles")
-    steps_lines.append("   2.2 [cyan]/specify[/] - Create baseline specification")
-    steps_lines.append("   2.3 [cyan]/plan[/] - Create implementation plan")
-    steps_lines.append("   2.4 [cyan]/tasks[/] - Generate actionable tasks")
-    steps_lines.append("   2.5 [cyan]/implement[/] - Execute implementation")
+    # Add discovery step if cloud provider was configured
+    if selected_cloud != "none" and selected_cloud == "azure":
+        steps_lines.append("   2.1 [cyan]/discover[/] [dim](optional)[/dim] - Discover existing cloud infrastructure")
+        steps_lines.append("   2.2 [cyan]/constitution[/] - Establish project principles")
+        steps_lines.append("   2.3 [cyan]/specify[/] - Create baseline specification")
+        steps_lines.append("   2.4 [cyan]/plan[/] - Create implementation plan")
+        steps_lines.append("   2.5 [cyan]/tasks[/] - Generate actionable tasks")
+        steps_lines.append("   2.6 [cyan]/implement[/] - Execute implementation")
+    else:
+        steps_lines.append("   2.1 [cyan]/constitution[/] - Establish project principles")
+        steps_lines.append("   2.2 [cyan]/specify[/] - Create baseline specification")
+        steps_lines.append("   2.3 [cyan]/plan[/] - Create implementation plan")
+        steps_lines.append("   2.4 [cyan]/tasks[/] - Generate actionable tasks")
+        steps_lines.append("   2.5 [cyan]/implement[/] - Execute implementation")
 
     steps_panel = Panel("\n".join(steps_lines), title="Next Steps", border_style="cyan", padding=(1,2))
     console.print()
@@ -1084,6 +1142,14 @@ def init(
         f"○ [cyan]/clarify[/] [bright_black](optional)[/bright_black] - Ask structured questions to de-risk ambiguous areas before planning (run before [cyan]/plan[/] if used)",
         f"○ [cyan]/analyze[/] [bright_black](optional)[/bright_black] - Cross-artifact consistency & alignment report (after [cyan]/tasks[/], before [cyan]/implement[/])"
     ]
+    
+    # Add discovery usage example if cloud provider was configured
+    if selected_cloud == "azure":
+        enhancement_lines.append("")
+        enhancement_lines.append("[dim]Discovery Examples:[/dim]")
+        enhancement_lines.append("  [cyan]/discover azd-env-name:my-env[/] - Discover resources with specific tag")
+        enhancement_lines.append("  [cyan]/discover environment:prod[/] - Discover production environment")
+    
     enhancements_panel = Panel("\n".join(enhancement_lines), title="Enhancement Commands", border_style="cyan", padding=(1,2))
     console.print()
     console.print(enhancements_panel)
