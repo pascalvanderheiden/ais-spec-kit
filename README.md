@@ -9,7 +9,7 @@
     <strong>An effort to allow organizations to focus on product scenarios rather than writing undifferentiated code with the help of Spec-Driven Development.</strong>
 </p>
 
-[![Release](https://github.com/github/spec-kit/actions/workflows/release.yml/badge.svg)](https://github.com/github/spec-kit/actions/workflows/release.yml)
+[![Release](https://github.com/pascalvanderheiden/ais-spec-kit/actions/workflows/release.yml/badge.svg)](https://github.com/pascalvanderheiden/ais-spec-kit/actions/workflows/release.yml)
 
 ---
 
@@ -47,7 +47,7 @@ Choose your preferred installation method:
 Install once and use everywhere:
 
 ```bash
-uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
+uv tool install specify-cli --from git+https://github.com/pascalvanderheiden/ais-spec-kit.git
 ```
 
 Then use the tool directly:
@@ -62,7 +62,7 @@ specify check
 Run directly without installing:
 
 ```bash
-uvx --from git+https://github.com/github/spec-kit.git specify init <PROJECT_NAME>
+uvx --from git+https://github.com/pascalvanderheiden/ais-spec-kit.git specify init <PROJECT_NAME>
 ```
 
 **Benefits of persistent installation:**
@@ -85,7 +85,6 @@ Use the **`/constitution`** command to create your project's governing principle
 If working with existing cloud resources, use **`/discover`** to analyze your current environment:
 
 ```bash
-/discover azd-env-name:my-environment    # Discover resources with specific tag
 /discover environment:production          # Discover by environment tag
 ```
 
@@ -117,13 +116,31 @@ Use **`/tasks`** to create an actionable task list from your implementation plan
 
 ### 6. Execute implementation
 
-Use **`/implement`** to execute all tasks and build your feature according to the plan.
+Use **`/implement`** to execute all tasks and build your feature according to the plan. 
 
 ```bash
 /implement
 ```
 
-For detailed step-by-step instructions, see our [comprehensive guide](./spec-driven.md).
+For detailed step-by-step instructions, see our [comprehensive guide](./spec-driven.md)
+
+Or implement by using GitHub Copilot Coding Agent, but then you need to first push to GitHub.com.
+
+```bash
+git add .
+git commit -m "First commit"
+git branch --show-current
+# If no remote exists, create GitHub repo first:
+gh repo create ais-spec-kit --public --source=. --remote=origin
+git push origin main
+git push --all origin
+```
+
+Use button: Delegate to Coding Agent
+
+```bash
+/implement all tasks defined in the tasks
+```
 
 ## 📽️ Video Overview
 
